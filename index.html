@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boekenkast-Bot</title>
+<style>
+  :root {
+    --toneel: #fbf9f4;
+    --lijn: #3a3a3a;
+    --accent: #c25b3a;
+    --boek: #4a6d8c;
+    --chat-bg: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Georgia, 'Times New Roman', serif;
+    background: var(--toneel);
+    color: var(--lijn);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  header {
+    text-align: center;
+    padding: 10px 0 4px;
+    border-bottom: 1px solid #d8d2c4;
+  }
+  header h1 { margin: 0; font-size: 1.3em; }
+  header p { margin: 2px 0 6px; font-size: 0.85em; color: #6b675e; }
+
+  /* Toneel */
+  #toneel {
+    position: relative;
+    height: 260px;
+    overflow: hidden;
+    background: linear-gradient(#fbf9f4 78%, #efe9dc 78%);
+    flex: none;
+  }
+  .kast {
+    position: absolute;
+    bottom: 8px;
+    width: 120px;
+    transition: transform 900ms ease, opacity 400ms;
+    opacity: 0;
+    transform: translateX(0) translateY(30px);
+  }
+  .kast.aan { opacity: 1; transform: translateX(0) translateY(0); }
+  .kast.weg { opacity: 0; transform: translateY(30px); }
+  .kast svg { width: 100%; height: auto; }
+  #kast_studentgegevens { left: 6%; }
+  #kast_resultaatverwerking { left: 28%; }
+  #kast_certificeren { left: 50%; }
+  #kast_diplomeren { left: 72%; }
+  .naambubbel {
+    position: absolute;
+    top: -22px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fff;
+    border: 1px solid var(--lijn);
+    border-radius: 8px;
+    padding: 1px 7px;
+    font-size: 0.72em;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 400ms;
+  }
+  .kast.aan .naambubbel { opacity: 1; }
+  .boekje {
+    position: absolute;
+    left: 50%;
+    top: -46px;
+    transform: translateX(-50%) scale(0.3);
+    opacity: 0;
+    transition: transform 500ms ease, opacity 500ms;
+  }
+  .kast.pakuit .boekje { opacity: 1; transform: translateX(-50%) scale(1); }
+  .faqkaart {
+    position: absolute;
+    right: 3%;
+    bottom: 20px;
+    width: 110px;
+    opacity: 0;
+    transform: rotate(-4deg) translateY(20px);
+    transition: opacity 500ms, transform 500ms;
+  }
+  .faqkaart.aan { opacity: 1; transform: rotate(-4deg) translateY(0); }
+
+  /* Chat */
+  #chat {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--chat-bg);
+    border-top: 1px solid #d8d2c4;
+    padding: 10px 14px;
+  }
+  .regel { margin: 6px 0; line-height: 1.4; }
+  .regel.jij { text-align: right; }
+  .regel.jij span {
+    display: inline-block;
+    background: #efe9dc;
+    border-radius: 10px 10px 0 10px;
+    padding: 5px 10px;
+  }
+  .regel.bot span {
+    display: inline-block;
+    background: #f4f7fa;
+    border: 1px solid #d7e0ea;
+    border-radius: 10px 10px 10px 0;
+    padding: 5px 10px;
+    max-width: 85%;
+  }
+  #voorbeelden { padding: 6px 10px; border-top: 1px solid #eee; }
+  #voorbeelden button, #stuur {
+    font-family: inherit;
+    background: var(--toneel);
+    border: 1px solid #c9c2b2;
+    border-radius: 12px;
+    padding: 3px 10px;
+    margin: 2px 3px 2px 0;
+    cursor: pointer;
+    font-size: 0.85em;
+    color: var(--lijn);
+  }
+  #voorbeelden button:hover, #stuur:hover { background: #efe9dc; }
+  #invoerrij {
+    display: flex;
+    gap: 6px;
+    padding: 8px 10px;
+    border-top: 1px solid #d8d2c4;
+  }
+  #vraag {
+    flex: 1;
+    font-family: inherit;
+    font-size: 1em;
+    padding: 7px 10px;
+    border: 1px solid #c9c2b2;
+    border-radius: 8px;
+    background: #fff;
+  }
+  #stuur { border-radius: 8px; padding: 7px 14px; margin: 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Boekenkast-Bot</h1>
+  <p>Ik kijk eerst in de FAQ. Helpt dat niet, dan pakken mijn kasten een boek erbij.</p>
+</header>
+
+<div id="toneel">
+  <div class="kast" id="kast_studentgegevens"></div>
+  <div class="kast" id="kast_resultaatverwerking"></div>
+  <div class="kast" id="kast_certificeren"></div>
+  <div class="kast" id="kast_diplomeren"></div>
+  <div class="faqkaart" id="faqkaart"></div>
+</div>
+
+<div id="chat"></div>
+
+<div id="voorbeelden"></div>
+
+<div id="invoerrij">
+  <input id="vraag" type="text" placeholder="Stel je vraag..." autocomplete="off">
+  <button id="stuur">Vraag</button>
+</div>
+
+<script>
+// ===INHOUD-START===
+const INHOUD = {
+  "uitleg": "Boekenkast_Bot content. Eerst wordt de FAQ gecheckt; alleen als geen FAQ-item past, komen de kasten met boeken per domein in beeld.",
+  "namen": {
+    "kast_studentgegevens": "Kast Sep",
+    "kast_resultaatverwerking": "Kast Ria",
+    "kast_certificeren": "Kast Ceel",
+    "kast_diplomeren": "Kast Doortje"
+  },
+  "faq": [
+    {
+      "v": "Wie is de bot?",
+      "k": [
+        "wie",
+        "jij"
+      ],
+      "a": "Ik ben de Boekenkast-Bot. Stel een vraag; ik kijk eerst in de FAQ, anders pakken mijn kasten er een boek bij."
+    },
+    {
+      "v": "Hoe werkt de bot?",
+      "k": [
+        "werking",
+        "faq",
+        "bot"
+      ],
+      "a": "Veelgestelde vragen staan in de FAQ. Past er geen, dan zoeken de kasten het antwoord op uit hun boeken per domein."
+    },
+    {
+      "v": "Wat kan ik vragen?",
+      "k": [
+        "kan",
+        "vragen",
+        "voorbeeld"
+      ],
+      "a": "Vraag over studentgegevens, resultaatverwerking, certificeren of diplomeren. Of kies een voorbeeldvraag."
+    },
+    {
+      "v": "Dank je wel",
+      "k": [
+        "dank",
+        "dankje",
+        "bedankt",
+        "fijn"
+      ],
+      "a": "Graag gedaan! Nog een vraag?"
+    }
+  ],
+  "moeilijk": "waarom|verschil|vergelijk|beste|advies|moet ik|uitleg",
+  "fallback": [
+    "Geen FAQ-item en geen boek in mijn kasten hielp verder. Probeer een van de voorbeeldvragen.",
+    "Hier vinden mijn kasten niets over. Stel je vraag anders of kies een voorbeeldvraag."
+  ],
+  "kasten": {
+    "studentgegevens": {
+      "naam": "Studentgegevens",
+      "kast_naam": "Kast Sep",
+      "hallo": "Kast Sep slaat de boeken over studentgegevens open. Wat wil je weten?",
+      "items": [
+        {
+          "v": "Waar vind ik de studentgegevens?",
+          "k": [
+            "vind",
+            "studentgegevens",
+            "student",
+            "gegevens",
+            "zoek",
+            "systeem"
+          ],
+          "a": "[VUL IN: waar de studentgegevens staan en hoe je ze zoekt]"
+        },
+        {
+          "v": "Hoe vraag ik gegevens van een student op?",
+          "k": [
+            "opvragen",
+            "opvraag",
+            "vraag",
+            "opzoeken"
+          ],
+          "a": "[VUL IN: hoe je gegevens van een student opvraagt]"
+        },
+        {
+          "v": "Welke gegevens van een student zijn bekend?",
+          "k": [
+            "welke",
+            "bekend",
+            "velden",
+            "persoonsgegevens",
+            "invulling"
+          ],
+          "a": "[VUL IN: welke velden er zijn, bijv. naam, geboortedatum, opleiding]"
+        },
+        {
+          "v": "Wat doe ik bij foutieve studentgegevens?",
+          "k": [
+            "fout",
+            "foutief",
+            "wijzigen",
+            "corrigeren",
+            "herstel"
+          ],
+          "a": "[VUL IN: wat je doet bij onjuiste of ontbrekende studentgegevens]"
+        }
+      ]
+    },
+    "resultaatverwerking": {
+      "naam": "Resultaatverwerking",
+      "kast_naam": "Kast Ria",
+      "hallo": "Kast Ria heeft de boeken over resultaten klaarliggen. Vraag maar!",
+      "items": [
+        {
+          "v": "Hoe verwerk ik resultaten?",
+          "k": [
+            "verwerk",
+            "verwerking",
+            "resultaat",
+            "resultaten",
+            "invoer"
+          ],
+          "a": "[VUL IN: hoe resultaten worden verwerkt]"
+        },
+        {
+          "v": "Wanneer moeten resultaten zijn verwerkt?",
+          "k": [
+            "wanneer",
+            "termijn",
+            "deadline",
+            "periode",
+            "ingediend"
+          ],
+          "a": "[VUL IN: voor wanneer resultaten verwerkt moeten zijn]"
+        },
+        {
+          "v": "Wat gebeurt er met onvolledige resultaten?",
+          "k": [
+            "onvolledig",
+            "ontbrekend",
+            "afwijking",
+            "ontbreekt"
+          ],
+          "a": "[VUL IN: wat er gebeurt bij onvolledige of ontbrekende resultaten]"
+        },
+        {
+          "v": "Waar staat de resultaatverwerking beschreven?",
+          "k": [
+            "beschreven",
+            "documentatie",
+            "wiki",
+            "stappen",
+            "uitgelegd"
+          ],
+          "a": "[VUL IN: waar de resultaatverwerking staat beschreven]"
+        }
+      ]
+    },
+    "certificeren": {
+      "naam": "Certificeren",
+      "kast_naam": "Kast Ceel",
+      "hallo": "Kast Ceel pakt het boek over certificeren erbij. Wat wil je weten?",
+      "items": [
+        {
+          "v": "Hoe werkt certificeren?",
+          "k": [
+            "certificeren",
+            "certificering",
+            "certificaat",
+            "examen",
+            "slagen"
+          ],
+          "a": "[VUL IN: hoe een student een certificaat krijgt]"
+        },
+        {
+          "v": "Wie geeft een certificaat af?",
+          "k": [
+            "geeft",
+            "geef",
+            "afgeven",
+            "bevoegd",
+            "uitgeven"
+          ],
+          "a": "[VUL IN: wie bevoegd is een certificaat af te geven]"
+        },
+        {
+          "v": "Wat is de inhoud van een certificaat?",
+          "k": [
+            "inhoud",
+            "vak",
+            "cijfer",
+            "onderdelen",
+            "vermeld"
+          ],
+          "a": "[VUL IN: wat er op het certificaat vermeld staat]"
+        },
+        {
+          "v": "Hoe lang duurt een certificaat aanvragen?",
+          "k": [
+            "lang",
+            "duurt",
+            "aanvraag",
+            "aanvragen",
+            "termijn"
+          ],
+          "a": "[VUL IN: hoe lang een certificaataanvraag duurt]"
+        }
+      ]
+    },
+    "diplomeren": {
+      "naam": "Diplomeren",
+      "kast_naam": "Kast Doortje",
+      "hallo": "Kast Doortje opent het boek over diplomeren. Vraag maar raag!",
+      "items": [
+        {
+          "v": "Wanneer krijgt een student een diploma?",
+          "k": [
+            "diploma",
+            "diplomeren",
+            "wanneer",
+            "uitreiken"
+          ],
+          "a": "[VUL IN: wanneer en hoe een diploma wordt uitgereikt]"
+        },
+        {
+          "v": "Hoe werkt diplomeren?",
+          "k": [
+            "diplomeren",
+            "proces",
+            "stappen"
+          ],
+          "a": "[VUL IN: welke stappen het diplomeren doorloopt]"
+        },
+        {
+          "v": "Wat is het verschil tussen certificeren en diplomeren?",
+          "k": [
+            "verschil",
+            "tussen",
+            "certificeren"
+          ],
+          "a": "[VUL IN: het verschil tussen een certificaat en een diploma]"
+        },
+        {
+          "v": "Kan een diploma worden nagestuurd of vervangen?",
+          "k": [
+            "nagestuurd",
+            "vervangen",
+            "kopie",
+            "duplicaat",
+            "verloren"
+          ],
+          "a": "[VUL IN: of en hoe een diploma kan worden nagestuurd of vervangen]"
+        }
+      ]
+    }
+  }
+}
+;
+// ===INHOUD-EIND===
+
+// Kast-plaatjes: eenvoudige potloodstijl-SVG per kast (geen foto's nodig).
+const ACCENTEN = {
+  kast_studentgegevens: "#c25b3a",
+  kast_resultaatverwerking: "#4a6d8c",
+  kast_certificeren: "#7a8c4a",
+  kast_diplomeren: "#a06ba8"
+};
+
+function kastSVG(id) {
+  const kleur = ACCENTEN[id] || "#c25b3a";
+  // boeken: repeterende blokjes per plank
+  let boeken = "";
+  for (let plank = 0; plank < 3; plank++) {
+    const y = 26 + plank * 30;
+    let x = 12;
+    let n = 0;
+    while (x < 78) {
+      const b = 8 + (n * 5) % 7;
+      const h = 16 + (n * 7) % 5;
+      const rk = n % 4 === 0 ? kleur : "#3a3a3a";
+      boeken += `<rect x="${x}" y="${y + 18 - h}" width="${b}" height="${h}" fill="none" stroke="${rk}" stroke-width="1.2"/>`;
+      x += b + 2;
+      n++;
+    }
+  }
+  return `
+  <svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+    <rect x="8" y="14" width="84" height="102" rx="3" fill="#f6f1e7" stroke="#3a3a3a" stroke-width="1.6"/>
+    <rect x="12" y="24" width="76" height="21" fill="none" stroke="#3a3a3a" stroke-width="1"/>
+    <rect x="12" y="55" width="76" height="21" fill="none" stroke="#3a3a3a" stroke-width="1"/>
+    <rect x="12" y="86" width="76" height="21" fill="none" stroke="#3a3a3a" stroke-width="1"/>
+    ${boeken}
+    <rect x="8" y="110" width="84" height="6" fill="#e8e0d0" stroke="#3a3a3a" stroke-width="1.2"/>
+    <line x1="4" y1="16" x2="4" y2="116" stroke="#3a3a3a" stroke-width="1.6"/>
+  </svg>
+  <div class="naambubbel"></div>
+  <svg class="boekje" width="46" height="34" viewBox="0 0 46 34" xmlns="http://www.w3.org/2000/svg">
+    <rect x="1" y="1" width="44" height="32" rx="2" fill="#fff" stroke="#3a3a3a" stroke-width="1.4"/>
+    <line x1="7" y1="1" x2="7" y2="33" stroke="#3a3a3a" stroke-width="1.2"/>
+    <line x1="12" y1="10" x2="38" y2="10" stroke="${kleur}" stroke-width="1.4"/>
+    <line x1="12" y1="17" x2="34" y2="17" stroke="#3a3a3a" stroke-width="1"/>
+    <line x1="12" y1="23" x2="30" y2="23" stroke="#3a3a3a" stroke-width="1"/>
+  </svg>`;
+}
+
+function faqSVG() {
+  return `
+  <svg viewBox="0 0 100 70" xmlns="http://www.w3.org/2000/svg">
+    <rect x="8" y="4" width="84" height="62" rx="3" fill="#fff" stroke="#3a3a3a" stroke-width="1.6"/>
+    <text x="50" y="28" text-anchor="middle" font-family="Georgia" font-size="18" fill="#3a3a3a">FAQ</text>
+    <line x1="20" y1="38" x2="80" y2="38" stroke="#c25b3a" stroke-width="1.4"/>
+    <line x1="26" y1="46" x2="74" y2="46" stroke="#3a3a3a" stroke-width="1"/>
+    <line x1="26" y1="54" x2="60" y2="54" stroke="#3a3a3a" stroke-width="1"/>
+  </svg>`;
+}
+
+// ---------- Vraag-logica ----------
+function norm(t) {
+  t = t.toLowerCase();
+  t = t.replace(/[!?.,;:()'"]+/g, " ");
+  return t.replace(/\s+/g, " ").trim();
+}
+function words(t) { return norm(t).split(" ").filter(w => w.length >= 3); }
+function isMoeilijk(vraag) {
+  const v = norm(vraag);
+  return INHOUD.moeilijk.split("|").some(m => m && v.includes(m));
+}
+function raak(w, k) { return w.some(x => x === k || x.startsWith(k)); }
+function faqOplossing(vraag) {
+  // FAQ-item met de beste score, of null.
+  const w = words(vraag);
+  if (!w.length) return null;
+  let beste = null;
+  for (const item of INHOUD.faq) {
+    const score = item.k.reduce((s, k) => s + (raak(w, k) ? 1 : 0), 0);
+    if (score > 0 && (!beste || score > beste.score)) {
+      beste = { score, item };
+    }
+  }
+  return beste;
+}
+function kastOplossing(vraag) {
+  // retourneert {score, kast, item} met de beste match, of null
+  const w = words(vraag);
+  if (!w.length) return null;
+  let beste = null;
+  for (const [sleutel, kast] of Object.entries(INHOUD.kasten)) {
+    for (const item of kast.items) {
+      const score = item.k.reduce((s, k) => s + (raak(w, k) ? 1 : 0), 0);
+      if (score > 0 && (!beste || score > beste.score)) {
+        beste = { score, kast: sleutel, item };
+      }
+    }
+  }
+  return beste;
+}
+
+// ---------- Toneel-scènes ----------
+const toneel = document.getElementById("toneel");
+const alleKasten = ["kast_studentgegevens", "kast_resultaatverwerking", "kast_certificeren", "kast_diplomeren"];
+
+function initToneel() {
+  for (const id of alleKasten) {
+    const el = document.getElementById(id);
+    el.innerHTML = kastSVG(id);
+    el.querySelector(".naambubbel").textContent = INHOUD.namen[id];
+  }
+  document.getElementById("faqkaart").innerHTML = faqSVG();
+}
+function kastAan(id, pakUit) {
+  const el = document.getElementById(id);
+  el.classList.add("aan");
+  el.classList.remove("weg");
+  if (pakUit) el.classList.add("pakuit");
+}
+function allesWeg() {
+  for (const id of alleKasten) {
+    const el = document.getElementById(id);
+    el.classList.remove("aan", "pakuit");
+  }
+  document.getElementById("faqkaart").classList.remove("aan");
+}
+function faqAan() { document.getElementById("faqkaart").classList.add("aan"); }
+
+// ---------- Chat ----------
+const chat = document.getElementById("chat");
+function zeg(tekst, jij) {
+  const div = document.createElement("div");
+  div.className = "regel " + (jij ? "jij" : "bot");
+  const span = document.createElement("span");
+  span.textContent = tekst;
+  div.appendChild(span);
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+function typeOut(tekst, klaar) {
+  // typ het antwoord letter voor letter
+  let i = 0;
+  const div = document.createElement("div");
+  div.className = "regel bot";
+  const span = document.createElement("span");
+  div.appendChild(span);
+  chat.appendChild(div);
+  const timer = setInterval(() => {
+    span.textContent = tekst.slice(0, ++i);
+    chat.scrollTop = chat.scrollHeight;
+    if (i >= tekst.length) { clearInterval(timer); if (klaar) klaar(); }
+  }, 12);
+}
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function solve(vraag, klaar) {
+  const faq = faqOplossing(vraag);
+  const best = kastOplossing(vraag);
+  // FAQ eerst, maar alleen bij een sterke match (score >= 2)
+  // of als geen enkele kast iets vindt.
+  if (faq && (faq.score >= 2 || !best)) {
+    allesWeg();
+    faqAan();
+    typeOut(faq.item.a, klaar);
+    return;
+  }
+  const moeilijk = isMoeilijk(vraag);
+  document.getElementById("faqkaart").classList.remove("aan");
+  if (!best) {
+    allesWeg();
+    typeOut(pick(INHOUD.fallback), klaar);
+    return;
+  }
+  if (moeilijk) {
+    // consult: alle kasten komen, boek ernaast, dan het antwoord.
+    allesWeg();
+    for (const id of alleKasten) kastAan(id, false);
+    typeOut("De kasten slaan hun boeken naast elkaar open en overleggen...", () => {
+      const kastEl = document.getElementById(best.kast);
+      kastEl.classList.add("pakuit");
+      typeOut("Na overleg: " + best.item.a, klaar);
+    });
+    return;
+  }
+  // gewone kast-scène: alleen de juiste kast komt met boek.
+  allesWeg();
+  kastAan(best.kast, false);
+  const kast = INHOUD.kasten[best.kast];
+  typeOut(kast.hallo, () => {
+    document.getElementById(best.kast).classList.add("pakuit");
+    typeOut(best.item.a, klaar);
+  });
+}
+
+// ---------- Voorbeeldvragen ----------
+function initVoorbeelden() {
+  const box = document.getElementById("voorbeelden");
+  box.innerHTML = "";
+  const knoppen = [];
+  for (const item of INHOUD.faq) knoppen.push(item.v);
+  for (const kast of Object.values(INHOUD.kasten)) {
+    knoppen.push(kast.items[kast.items.length - 1].v);
+  }
+  for (const v of knoppen) {
+    const b = document.createElement("button");
+    b.textContent = v;
+    b.onclick = () => stelVraag(v);
+    box.appendChild(b);
+  }
+}
+
+function stelVraag(v) {
+  const vraag = v.trim();
+  if (!vraag) return;
+  zeg(vraag, true);
+  document.getElementById("vraag").value = "";
+  solve(vraag, null);
+}
+
+document.getElementById("stuur").onclick = () => stelVraag(document.getElementById("vraag").value);
+document.getElementById("vraag").addEventListener("keydown", e => {
+  if (e.key === "Enter") stelVraag(e.target.value);
+});
+
+initToneel();
+initVoorbeelden();
+zeg("Hoi! Ik ben de Boekenkast-Bot. Stel een vraag of kies een voorbeeldvraag hieronder.", false);
+</script>
+</body>
+</html>

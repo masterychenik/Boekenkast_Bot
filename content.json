@@ -11,7 +11,6 @@
       "v": "Wie is de bot?",
       "k": [
         "wie",
-        "bot",
         "jij"
       ],
       "a": "Ik ben de Boekenkast-Bot. Stel een vraag; ik kijk eerst in de FAQ, anders pakken mijn kasten er een boek bij."
@@ -19,17 +18,15 @@
     {
       "v": "Hoe werkt de bot?",
       "k": [
-        "hoe",
-        "werkt",
         "werking",
-        "faq"
+        "faq",
+        "bot"
       ],
       "a": "Veelgestelde vragen staan in de FAQ. Past er geen, dan zoeken de kasten het antwoord op uit hun boeken per domein."
     },
     {
       "v": "Wat kan ik vragen?",
       "k": [
-        "wat",
         "kan",
         "vragen",
         "voorbeeld"
@@ -208,7 +205,7 @@
     "diplomeren": {
       "naam": "Diplomeren",
       "kast_naam": "Kast Doortje",
-      "hallo": "Kast Doortje opent het boek over diplomeren. Vraag maar raak!",
+      "hallo": "Kast Doortje opent het boek over diplomeren. Vraag maar raag!",
       "items": [
         {
           "v": "Wanneer krijgt een student een diploma?",
@@ -225,8 +222,7 @@
           "k": [
             "diplomeren",
             "proces",
-            "stappen",
-            "werkt"
+            "stappen"
           ],
           "a": "[VUL IN: welke stappen het diplomeren doorloopt]"
         },
