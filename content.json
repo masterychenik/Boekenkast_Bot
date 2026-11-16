@@ -1,0 +1,256 @@
+{
+  "uitleg": "Boekenkast_Bot content. Eerst wordt de FAQ gecheckt; alleen als geen FAQ-item past, komen de kasten met boeken per domein in beeld.",
+  "namen": {
+    "kast_studentgegevens": "Kast Sep",
+    "kast_resultaatverwerking": "Kast Ria",
+    "kast_certificeren": "Kast Ceel",
+    "kast_diplomeren": "Kast Doortje"
+  },
+  "faq": [
+    {
+      "v": "Wie is de bot?",
+      "k": [
+        "wie",
+        "bot",
+        "jij"
+      ],
+      "a": "Ik ben de Boekenkast-Bot. Stel een vraag; ik kijk eerst in de FAQ, anders pakken mijn kasten er een boek bij."
+    },
+    {
+      "v": "Hoe werkt de bot?",
+      "k": [
+        "hoe",
+        "werkt",
+        "werking",
+        "faq"
+      ],
+      "a": "Veelgestelde vragen staan in de FAQ. Past er geen, dan zoeken de kasten het antwoord op uit hun boeken per domein."
+    },
+    {
+      "v": "Wat kan ik vragen?",
+      "k": [
+        "wat",
+        "kan",
+        "vragen",
+        "voorbeeld"
+      ],
+      "a": "Vraag over studentgegevens, resultaatverwerking, certificeren of diplomeren. Of kies een voorbeeldvraag."
+    },
+    {
+      "v": "Dank je wel",
+      "k": [
+        "dank",
+        "dankje",
+        "bedankt",
+        "fijn"
+      ],
+      "a": "Graag gedaan! Nog een vraag?"
+    }
+  ],
+  "moeilijk": "waarom|verschil|vergelijk|beste|advies|moet ik|uitleg",
+  "fallback": [
+    "Geen FAQ-item en geen boek in mijn kasten hielp verder. Probeer een van de voorbeeldvragen.",
+    "Hier vinden mijn kasten niets over. Stel je vraag anders of kies een voorbeeldvraag."
+  ],
+  "kasten": {
+    "studentgegevens": {
+      "naam": "Studentgegevens",
+      "kast_naam": "Kast Sep",
+      "hallo": "Kast Sep slaat de boeken over studentgegevens open. Wat wil je weten?",
+      "items": [
+        {
+          "v": "Waar vind ik de studentgegevens?",
+          "k": [
+            "vind",
+            "studentgegevens",
+            "student",
+            "gegevens",
+            "zoek",
+            "systeem"
+          ],
+          "a": "[VUL IN: waar de studentgegevens staan en hoe je ze zoekt]"
+        },
+        {
+          "v": "Hoe vraag ik gegevens van een student op?",
+          "k": [
+            "opvragen",
+            "opvraag",
+            "vraag",
+            "opzoeken"
+          ],
+          "a": "[VUL IN: hoe je gegevens van een student opvraagt]"
+        },
+        {
+          "v": "Welke gegevens van een student zijn bekend?",
+          "k": [
+            "welke",
+            "bekend",
+            "velden",
+            "persoonsgegevens",
+            "invulling"
+          ],
+          "a": "[VUL IN: welke velden er zijn, bijv. naam, geboortedatum, opleiding]"
+        },
+        {
+          "v": "Wat doe ik bij foutieve studentgegevens?",
+          "k": [
+            "fout",
+            "foutief",
+            "wijzigen",
+            "corrigeren",
+            "herstel"
+          ],
+          "a": "[VUL IN: wat je doet bij onjuiste of ontbrekende studentgegevens]"
+        }
+      ]
+    },
+    "resultaatverwerking": {
+      "naam": "Resultaatverwerking",
+      "kast_naam": "Kast Ria",
+      "hallo": "Kast Ria heeft de boeken over resultaten klaarliggen. Vraag maar!",
+      "items": [
+        {
+          "v": "Hoe verwerk ik resultaten?",
+          "k": [
+            "verwerk",
+            "verwerking",
+            "resultaat",
+            "resultaten",
+            "invoer"
+          ],
+          "a": "[VUL IN: hoe resultaten worden verwerkt]"
+        },
+        {
+          "v": "Wanneer moeten resultaten zijn verwerkt?",
+          "k": [
+            "wanneer",
+            "termijn",
+            "deadline",
+            "periode",
+            "ingediend"
+          ],
+          "a": "[VUL IN: voor wanneer resultaten verwerkt moeten zijn]"
+        },
+        {
+          "v": "Wat gebeurt er met onvolledige resultaten?",
+          "k": [
+            "onvolledig",
+            "ontbrekend",
+            "afwijking",
+            "ontbreekt"
+          ],
+          "a": "[VUL IN: wat er gebeurt bij onvolledige of ontbrekende resultaten]"
+        },
+        {
+          "v": "Waar staat de resultaatverwerking beschreven?",
+          "k": [
+            "beschreven",
+            "documentatie",
+            "wiki",
+            "stappen",
+            "uitgelegd"
+          ],
+          "a": "[VUL IN: waar de resultaatverwerking staat beschreven]"
+        }
+      ]
+    },
+    "certificeren": {
+      "naam": "Certificeren",
+      "kast_naam": "Kast Ceel",
+      "hallo": "Kast Ceel pakt het boek over certificeren erbij. Wat wil je weten?",
+      "items": [
+        {
+          "v": "Hoe werkt certificeren?",
+          "k": [
+            "certificeren",
+            "certificering",
+            "certificaat",
+            "examen",
+            "slagen"
+          ],
+          "a": "[VUL IN: hoe een student een certificaat krijgt]"
+        },
+        {
+          "v": "Wie geeft een certificaat af?",
+          "k": [
+            "geeft",
+            "geef",
+            "afgeven",
+            "bevoegd",
+            "uitgeven"
+          ],
+          "a": "[VUL IN: wie bevoegd is een certificaat af te geven]"
+        },
+        {
+          "v": "Wat is de inhoud van een certificaat?",
+          "k": [
+            "inhoud",
+            "vak",
+            "cijfer",
+            "onderdelen",
+            "vermeld"
+          ],
+          "a": "[VUL IN: wat er op het certificaat vermeld staat]"
+        },
+        {
+          "v": "Hoe lang duurt een certificaat aanvragen?",
+          "k": [
+            "lang",
+            "duurt",
+            "aanvraag",
+            "aanvragen",
+            "termijn"
+          ],
+          "a": "[VUL IN: hoe lang een certificaataanvraag duurt]"
+        }
+      ]
+    },
+    "diplomeren": {
+      "naam": "Diplomeren",
+      "kast_naam": "Kast Doortje",
+      "hallo": "Kast Doortje opent het boek over diplomeren. Vraag maar raak!",
+      "items": [
+        {
+          "v": "Wanneer krijgt een student een diploma?",
+          "k": [
+            "diploma",
+            "diplomeren",
+            "wanneer",
+            "uitreiken"
+          ],
+          "a": "[VUL IN: wanneer en hoe een diploma wordt uitgereikt]"
+        },
+        {
+          "v": "Hoe werkt diplomeren?",
+          "k": [
+            "diplomeren",
+            "proces",
+            "stappen",
+            "werkt"
+          ],
+          "a": "[VUL IN: welke stappen het diplomeren doorloopt]"
+        },
+        {
+          "v": "Wat is het verschil tussen certificeren en diplomeren?",
+          "k": [
+            "verschil",
+            "tussen",
+            "certificeren"
+          ],
+          "a": "[VUL IN: het verschil tussen een certificaat en een diploma]"
+        },
+        {
+          "v": "Kan een diploma worden nagestuurd of vervangen?",
+          "k": [
+            "nagestuurd",
+            "vervangen",
+            "kopie",
+            "duplicaat",
+            "verloren"
+          ],
+          "a": "[VUL IN: of en hoe een diploma kan worden nagestuurd of vervangen]"
+        }
+      ]
+    }
+  }
+}
