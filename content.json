@@ -1,10 +1,10 @@
 {
   "uitleg": "Boekenkast_Bot content. Eerst wordt de FAQ gecheckt; alleen als geen FAQ-item past, komen de kasten met boeken per domein in beeld.",
   "namen": {
-    "kast_studentgegevens": "Kast Sep",
-    "kast_resultaatverwerking": "Kast Ria",
-    "kast_certificeren": "Kast Ceel",
-    "kast_diplomeren": "Kast Doortje"
+    "kast_studentgegevens": "Kast Geesje",
+    "kast_resultaatverwerking": "Kast Vera",
+    "kast_certificeren": "Kast Cees",
+    "kast_diplomeren": "Kast Didi"
   },
   "faq": [
     {
@@ -52,8 +52,8 @@
   "kasten": {
     "studentgegevens": {
       "naam": "Studentgegevens",
-      "kast_naam": "Kast Sep",
-      "hallo": "Kast Sep slaat de boeken over studentgegevens open. Wat wil je weten?",
+      "kast_naam": "Kast Geesje",
+      "hallo": "Kast Geesje slaat de boeken over studentgegevens open. Wat wil je weten?",
       "items": [
         {
           "v": "Waar vind ik de studentgegevens?",
@@ -103,8 +103,8 @@
     },
     "resultaatverwerking": {
       "naam": "Resultaatverwerking",
-      "kast_naam": "Kast Ria",
-      "hallo": "Kast Ria heeft de boeken over resultaten klaarliggen. Vraag maar!",
+      "kast_naam": "Kast Vera",
+      "hallo": "Kast Vera heeft de boeken over resultaten klaarliggen. Vraag maar!",
       "items": [
         {
           "v": "Hoe verwerk ik resultaten?",
@@ -153,8 +153,8 @@
     },
     "certificeren": {
       "naam": "Certificeren",
-      "kast_naam": "Kast Ceel",
-      "hallo": "Kast Ceel pakt het boek over certificeren erbij. Wat wil je weten?",
+      "kast_naam": "Kast Cees",
+      "hallo": "Kast Cees pakt het boek over certificeren erbij. Wat wil je weten?",
       "items": [
         {
           "v": "Hoe werkt certificeren?",
@@ -204,8 +204,8 @@
     },
     "diplomeren": {
       "naam": "Diplomeren",
-      "kast_naam": "Kast Doortje",
-      "hallo": "Kast Doortje opent het boek over diplomeren. Vraag maar raag!",
+      "kast_naam": "Kast Didi",
+      "hallo": "Kast Didi opent het boek over diplomeren. Vraag maar raag!",
       "items": [
         {
           "v": "Wanneer krijgt een student een diploma?",
