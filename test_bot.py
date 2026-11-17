@@ -129,6 +129,9 @@ def main() -> int:
                 fouten.append(f"index.html mist toneel-element voor kast '{sleutel}'")
         if "getElementById(best.kast)" in html or "kastAan(best.kast" in html:
             fouten.append("index.html gebruikt best.kast direct als element-id; gebruik kastId()")
+        for kenmerk in ["laatsteKast", "kastKnoppen("]:
+            if kenmerk not in html:
+                fouten.append(f"index.html mist vervolgvraag-functionaliteit: {kenmerk}")
         content = (HIER / "content.json").read_text(encoding="utf-8").strip()
         if content not in html:
             fouten.append("index.html bevat niet (meer) de actuele content.json")
