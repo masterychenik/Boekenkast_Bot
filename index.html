@@ -48,6 +48,7 @@
   }
   .kast.aan { opacity: 1; transform: translateX(0) translateY(0); }
   .kast.weg { opacity: 0; transform: translateY(30px); }
+  .kast img.plaatje { width: 100%; display: block; }
   .kast svg { width: 100%; height: auto; }
   #kast_studentgegevens { left: 6%; }
   #kast_resultaatverwerking { left: 28%; }
@@ -423,7 +424,12 @@ const INHOUD = {
 ;
 // ===INHOUD-EIND===
 
-// Kast-plaatjes: eenvoudige potloodstijl-SVG per kast (geen foto's nodig).
+// ===KI-START===
+// Hier komen de kast-plaatjes (data-URI's, webp) na het draaien van verwerk_kasten.py.
+const KI = {};
+// ===KI-EIND===
+
+// Kast-plaatjes: tekeningen van Olga in potloodstijl, ingesloten als webp.
 const ACCENTEN = {
   kast_studentgegevens: "#c25b3a",
   kast_resultaatverwerking: "#4a6d8c",
@@ -433,31 +439,11 @@ const ACCENTEN = {
 
 function kastSVG(id) {
   const kleur = ACCENTEN[id] || "#c25b3a";
-  // boeken: repeterende blokjes per plank
-  let boeken = "";
-  for (let plank = 0; plank < 3; plank++) {
-    const y = 26 + plank * 30;
-    let x = 12;
-    let n = 0;
-    while (x < 78) {
-      const b = 8 + (n * 5) % 7;
-      const h = 16 + (n * 7) % 5;
-      const rk = n % 4 === 0 ? kleur : "#3a3a3a";
-      boeken += `<rect x="${x}" y="${y + 18 - h}" width="${b}" height="${h}" fill="none" stroke="${rk}" stroke-width="1.2"/>`;
-      x += b + 2;
-      n++;
-    }
-  }
+  const plaatje = KI[id]
+    ? `<img class="plaatje" alt="" src="${KI[id]}">`
+    : "";
   return `
-  <svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
-    <rect x="8" y="14" width="84" height="102" rx="3" fill="#f6f1e7" stroke="#3a3a3a" stroke-width="1.6"/>
-    <rect x="12" y="24" width="76" height="21" fill="none" stroke="#3a3a3a" stroke-width="1"/>
-    <rect x="12" y="55" width="76" height="21" fill="none" stroke="#3a3a3a" stroke-width="1"/>
-    <rect x="12" y="86" width="76" height="21" fill="none" stroke="#3a3a3a" stroke-width="1"/>
-    ${boeken}
-    <rect x="8" y="110" width="84" height="6" fill="#e8e0d0" stroke="#3a3a3a" stroke-width="1.2"/>
-    <line x1="4" y1="16" x2="4" y2="116" stroke="#3a3a3a" stroke-width="1.6"/>
-  </svg>
+  ${plaatje}
   <div class="naambubbel"></div>
   <svg class="boekje" width="46" height="34" viewBox="0 0 46 34" xmlns="http://www.w3.org/2000/svg">
     <rect x="1" y="1" width="44" height="32" rx="2" fill="#fff" stroke="#3a3a3a" stroke-width="1.4"/>
