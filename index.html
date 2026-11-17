@@ -44,12 +44,9 @@
     position: absolute;
     bottom: 8px;
     width: 120px;
-    transition: transform 900ms ease, opacity 400ms;
-    opacity: 0;
-    transform: translateX(0) translateY(30px);
+    transition: opacity 400ms, filter 400ms;
   }
-  .kast.aan { opacity: 1; transform: translateX(0) translateY(0); }
-  .kast.weg { opacity: 0; transform: translateY(30px); }
+  .kast.dim { opacity: 0.35; filter: grayscale(0.7); }
   .kast img.plaatje { width: 100%; display: block; }
   .kast svg { width: 100%; height: auto; }
   #kast_studentgegevens { left: 6%; }
@@ -67,10 +64,8 @@
     padding: 1px 7px;
     font-size: 0.72em;
     white-space: nowrap;
-    opacity: 0;
-    transition: opacity 400ms;
+    opacity: 1;
   }
-  .kast.aan .naambubbel { opacity: 1; }
   .boekje {
     position: absolute;
     left: 50%;
@@ -529,14 +524,14 @@ function initToneel() {
 }
 function kastAan(id, pakUit) {
   const el = document.getElementById(id);
-  el.classList.add("aan");
-  el.classList.remove("weg");
+  el.classList.remove("dim");
   if (pakUit) el.classList.add("pakuit");
 }
 function allesWeg() {
   for (const id of alleKasten) {
     const el = document.getElementById(id);
-    el.classList.remove("aan", "pakuit");
+    el.classList.add("dim");
+    el.classList.remove("pakuit");
   }
   document.getElementById("faqkaart").classList.remove("aan");
 }
