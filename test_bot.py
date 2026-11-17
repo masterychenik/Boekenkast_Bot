@@ -119,10 +119,16 @@ def main() -> int:
     if len(data.get("fallback", [])) < 1:
         fouten.append("Geen fallback-teksten in content.json")
 
-    # 7. index.html bevat de actuele content en blijft onder 1 MB.
+    # 7. Elke kast-sleutel heeft een toneel-element "kast_<sleutel>" in index.html,
+    #    en de scène-code gebruikt kastId() (geen direct best.kast als element-id).
     pad = HIER / "index.html"
     if pad.exists():
         html = pad.read_text(encoding="utf-8")
+        for sleutel in data["kasten"]:
+            if f'id="kast_{sleutel}"' not in html:
+                fouten.append(f"index.html mist toneel-element voor kast '{sleutel}'")
+        if "getElementById(best.kast)" in html or "kastAan(best.kast" in html:
+            fouten.append("index.html gebruikt best.kast direct als element-id; gebruik kastId()")
         content = (HIER / "content.json").read_text(encoding="utf-8").strip()
         if content not in html:
             fouten.append("index.html bevat niet (meer) de actuele content.json")
