@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Jordaan Kwartet — canvas chat</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #f6f8fa; margin: 20px; color: #1f2328; }
+  h1 { font-size: 20px; margin: 0 0 8px; }
+  .controls { display: flex; gap: 8px; align-items: center; margin: 10px 0; flex-wrap: wrap; }
+  button, select, label.file { font: inherit; padding: 6px 12px; border: 1px solid #d0d7de; border-radius: 6px; background: #fff; cursor: pointer; }
+  button:hover { background: #f3f4f6; }
+  canvas { background: #fff; border: 1px solid #d0d7de; border-radius: 8px; display: block; }
+  .hint { color: #57606a; font-size: 13px; }
+  #file { display: none; }
+</style>
+</head>
+<body>
+<h1>Jordaan Kwartet — geanimeerde chat op canvas</h1>
+<div class="controls">
+  <button id="play">⏸ Pauze</button>
+  <button id="restart">⟲ Opnieuw</button>
+  <select id="speed">
+    <option value="0.5">0,5×</option>
+    <option value="1" selected>1×</option>
+    <option value="2">2×</option>
+    <option value="4">4×</option>
+  </select>
+  <label class="file">Eigen chat laden (.json)<input id="file" type="file" accept=".json,application/json"></label>
+  <span class="hint" id="status"></span>
+</div>
+<canvas id="c" width="920" height="560"></canvas>
+<p class="hint">Eigen chat laden: <code>python3 quartet_chat.py --topic "..." --export chat.json</code> (met Ollama), laad daarna <code>chat.json</code> via de knop hierboven.</p>
+<script>
+const KLEUREN = { Jaap: '#0969da', Truus: '#bf4b8a', Piet: '#9a6700', Sien: '#1a7f37', Gebruiker: '#57606a' };
+
+const DEMO = { messages: [
+  { speaker: 'Gebruiker', content: "Wat vinden jullie van SLM's?" },
+  { speaker: 'Jaap', content: 'Kortgezegd: een SLM is een klein taalmodel. Snel, goedkoop en lokaal te draaien.' },
+  { speaker: 'Truus', content: 'In mijn tijd deden we dat met postduiven, ging ook prima hoor!' },
+  { speaker: 'Piet', content: 'Technisch: minder parameters dan een LLM, dus het draait op je eigen laptop via Ollama.' },
+  { speaker: 'Sien', content: 'Kortom: handig voor privacy, wel minder sterk dan een groot model. Begrijpelijk?' },
+  { speaker: 'Gebruiker', content: 'Dus elk van jullie kan een eigen SLM draaien?' },
+  { speaker: 'Piet', content: 'Precies — zoals hier: elk personage krijgt via --models zijn eigen model mee.' },
+  { speaker: 'Jaap', content: 'Feitelijk correct.' },
+  { speaker: 'Truus', content: 'En dan zingen we het samen uit!' },
+  { speaker: 'Sien', content: "Vier SLM's, één harmonie. Dat is het idee." }
+]};
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let transcript = DEMO;
+let items = [];
+let shown = 0;
+let playing = true;
+let interval = 900;
+let timer = null;
+
+function wrapTekst(tekst, maxBreedte) {
+  const woorden = tekst.split(/\s+/);
+  const regels = [];
+  let regel = '';
+  for (const w of woorden) {
+    const t = regel ? regel + ' ' + w : w;
+    if (regel && ctx.measureText(t).width > maxBreedte) {
+      regels.push(regel);
+      regel = w;
+    } else {
+      regel = t;
+    }
+  }
+  if (regel) regels.push(regel);
+  return regels;
+}
+
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function layout() {
+  items = [];
+  let y = 16;
+  for (const m of transcript.messages) {
+    const regels = wrapTekst(m.content, 616);
+    const h = 24 + regels.length * 19 + 10;
+    items.push({ m, kleur: KLEUREN[m.speaker] || '#57606a', regels, x: 76, y, w: 640, h });
+    y += h + 14;
+  }
+}
+
+function teken() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const n = Math.min(shown, items.length);
+  let onder = 16;
+  if (n > 0) onder = items[n - 1].y + items[n - 1].h + 16;
+  const offset = Math.max(0, onder - canvas.height);
+  ctx.save();
+  ctx.translate(0, -offset);
+  for (let i = 0; i < n; i++) {
+    const it = items[i];
+    ctx.fillStyle = it.kleur;
+    ctx.beginPath();
+    ctx.arc(40, it.y + it.h / 2, 20, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 14px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(it.m.speaker[0], 40, it.y + it.h / 2 + 1);
+    ctx.fillStyle = '#f6f8fa';
+    ctx.strokeStyle = it.kleur;
+    ctx.lineWidth = 1.5;
+    roundRect(it.x, it.y, it.w, it.h, 10);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = it.kleur;
+    ctx.font = 'bold 12px system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText(it.m.speaker, it.x + 12, it.y + 18);
+    ctx.fillStyle = '#1f2328';
+    ctx.font = '14px system-ui, sans-serif';
+    it.regels.forEach((r, idx) => ctx.fillText(r, it.x + 12, it.y + 38 + idx * 19));
+  }
+  if (playing && shown < items.length) {
+    const it = items[shown];
+    ctx.fillStyle = '#f6f8fa';
+    ctx.strokeStyle = it.kleur;
+    ctx.lineWidth = 1.5;
+    roundRect(it.x, it.y, 90, 40, 10);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#57606a';
+    ctx.font = 'bold 18px system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('···', it.x + 16, it.y + 28);
+  }
+  ctx.restore();
+}
+
+function updatePlay() {
+  document.getElementById('play').textContent = playing ? '⏸ Pauze' : '▶ Verder';
+}
+
+function updateStatus() {
+  document.getElementById('status').textContent = shown + ' / ' + items.length + ' berichten';
+}
+
+function stopTimer() {
+  if (timer) clearInterval(timer);
+  timer = null;
+}
+
+function startTimer() {
+  stopTimer();
+  timer = setInterval(() => {
+    if (shown < items.length) {
+      shown++;
+      teken();
+      updateStatus();
+      if (shown >= items.length) {
+        playing = false;
+        updatePlay();
+        stopTimer();
+      }
+    }
+  }, interval);
+}
+
+document.getElementById('play').onclick = () => {
+  playing = !playing;
+  if (playing && shown >= items.length) shown = 0;
+  updatePlay();
+  if (playing) startTimer(); else stopTimer();
+  teken();
+};
+
+document.getElementById('restart').onclick = () => {
+  shown = 0;
+  playing = true;
+  updatePlay();
+  startTimer();
+  teken();
+  updateStatus();
+};
+
+document.getElementById('speed').onchange = (e) => {
+  interval = 900 / parseFloat(e.target.value);
+  if (playing) startTimer();
+};
+
+document.getElementById('file').onchange = (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      transcript = Array.isArray(data) ? { messages: data } : data;
+      if (!Array.isArray(transcript.messages)) throw new Error('geen "messages"-veld gevonden');
+      shown = 0;
+      playing = true;
+      updatePlay();
+      layout();
+      startTimer();
+      teken();
+      updateStatus();
+    } catch (err) {
+      alert('Kon JSON niet laden: ' + err.message);
+    }
+  };
+  reader.readAsText(f);
+};
+
+layout();
+updateStatus();
+updatePlay();
+startTimer();
+teken();
+</script>
+</body>
+</html>

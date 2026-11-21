@@ -113,6 +113,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     p.add_argument("--base-url", default="http://localhost:11434", help="Ollama API-adres.")
     p.add_argument("--mock", action="store_true", help="Testmodus zonder Ollama.")
+    p.add_argument("--export", metavar="PAD", help="Schrijf de transcript als JSON naar PAD bij afsluiten.")
     return p.parse_args(argv)
 
 
@@ -136,6 +137,15 @@ def main(argv: list[str] | None = None) -> int:
         print("  [MOCK-MODUS: geen echte Ollama-calls]")
     print("Typ 'exit' om te stoppen.\n")
 
+    code, transcript = run_chat(args, personas)
+    if args.export:
+        with open(args.export, "w", encoding="utf-8") as f:
+            json.dump({"messages": transcript}, f, ensure_ascii=False, indent=2)
+        print(f"Transcript geschreven naar {args.export}")
+    return code
+
+
+def run_chat(args: argparse.Namespace, personas: list[Persona]) -> tuple[int, list[dict]]:
     transcript: list[dict] = []
     topic = args.topic
 
@@ -147,12 +157,12 @@ def main(argv: list[str] | None = None) -> int:
                 text = input("Jij: ").strip()
             except (EOFError, KeyboardInterrupt):
                 print("\nTot ziens!")
-                return 0
+                return 0, transcript
             if not text:
                 continue
             if text.lower() in {"exit", "quit", "stop"}:
                 print("Tot ziens!")
-                return 0
+                return 0, transcript
 
         transcript.append({"speaker": "Gebruiker", "content": text})
         print(f"\n[Gebruiker] {text}")
@@ -175,14 +185,12 @@ def main(argv: list[str] | None = None) -> int:
                             "Draait Ollama? Start het met `ollama serve` en pull een model met "
                             "`ollama pull <model>`. Of test met --mock."
                         )
-                        return 1
+                        return 1, transcript
                     except (KeyError, json.JSONDecodeError) as exc:
                         print(f"\nFout: onverwacht antwoord van Ollama: {exc}")
-                        return 1
+                        return 1, transcript
                 transcript.append({"speaker": persona.name, "content": reply})
                 print(f"[{persona.name} | {persona.model}] {reply}")
-
-    return 0
 
 
 if __name__ == "__main__":

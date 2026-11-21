@@ -36,7 +36,15 @@ python3 quartet_chat.py --models "jaap=mistral,truus=gemma3,piet=llama3.2,sien=q
 
 # Testmodus zonder Ollama (alleen orchestratie testen)
 python3 quartet_chat.py --mock --topic "test" --rounds 1
+
+# Chat opslaan als JSON, daarna visueel afspelen in de browser
+python3 quartet_chat.py --topic "Wat vinden jullie van AI?" --export chat.json
+# open daarna kwartet-canvas.html in een browser en laad chat.json
 ```
+
+## Canvas-visualisatie
+
+`kwartet-canvas.html` tekent het gesprek geanimeerd op een HTML5 `<canvas>`: avatar + spraakballon per bericht, met play/pauze, snelheid en de optie om een eigen `--export chat.json` te laden. Werkt met een ingebouwde demo-chat, ook zonder Ollama.
 
 In de uitvoer zie je per bericht welk model het heeft gegenereerd: `[Piet | llama3.2] ...`.
 
