@@ -1,0 +1,24 @@
+name: bot-checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: index.html actueel met content.json?
+        run: python3 build.py --check
+      - name: Bot-logica tests
+        run: python3 test_bot.py
+      - name: Syntaxcheck Jordaan Kwartet demo
+        run: python3 -m py_compile jordaan-quartet-chat/quartet_chat.py
+      - name: Mock smoke test Jordaan Kwartet demo
+        run: echo "exit" | python3 jordaan-quartet-chat/quartet_chat.py --mock --topic "CI test" --rounds 1
