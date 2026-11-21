@@ -2,16 +2,21 @@
 <html lang="nl">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Jordaan Kwartet — canvas chat</title>
 <style>
   body { font-family: system-ui, sans-serif; background: #f6f8fa; margin: 20px; color: #1f2328; }
   h1 { font-size: 20px; margin: 0 0 8px; }
   .controls { display: flex; gap: 8px; align-items: center; margin: 10px 0; flex-wrap: wrap; }
-  button, select, label.file { font: inherit; padding: 6px 12px; border: 1px solid #d0d7de; border-radius: 6px; background: #fff; cursor: pointer; }
+  button, select, label.file, input[type="text"], input[type="number"] { font: inherit; padding: 6px 12px; border: 1px solid #d0d7de; border-radius: 6px; background: #fff; }
+  button { cursor: pointer; }
   button:hover { background: #f3f4f6; }
-  canvas { background: #fff; border: 1px solid #d0d7de; border-radius: 8px; display: block; }
+  canvas { background: #fff; border: 1px solid #d0d7de; border-radius: 8px; display: block; max-width: 100%; }
   .hint { color: #57606a; font-size: 13px; }
   #file { display: none; }
+  details { margin: 12px 0; background: #fff; border: 1px solid #d0d7de; border-radius: 8px; padding: 10px 14px; }
+  summary { cursor: pointer; font-weight: 600; }
+  .live-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
 </style>
 </head>
 <body>
@@ -28,10 +33,39 @@
   <label class="file">Eigen chat laden (.json)<input id="file" type="file" accept=".json,application/json"></label>
   <span class="hint" id="status"></span>
 </div>
+
+<details id="livePanel">
+  <summary>Live modus — chat met echte SLM's via Ollama (bijv. iPad → Mac opzelfde Wi-Fi)</summary>
+  <div class="live-row">
+    <input type="text" id="ollamaUrl" value="http://192.168.1.10:11434" title="Ollama-adres van je Mac" style="width:230px;">
+    <input type="text" id="topicLive" placeholder="Onderwerp / vraag..." style="width:260px;">
+    <label class="hint">rondes <input type="number" id="roundsLive" value="2" min="1" max="5" style="width:56px;"></label>
+    <button id="liveBtn">▶ Live starten</button>
+    <span class="hint" id="liveStatus"></span>
+  </div>
+  <div class="live-row">
+    <span class="hint">Model per personage:</span>
+    <input type="text" class="modelInput" data-name="Jaap" value="mistral" style="width:130px;" title="Model Jaap">
+    <input type="text" class="modelInput" data-name="Truus" value="mistral" style="width:130px;" title="Model Truus">
+    <input type="text" class="modelInput" data-name="Piet" value="mistral" style="width:130px;" title="Model Piet">
+    <input type="text" class="modelInput" data-name="Sien" value="mistral" style="width:130px;" title="Model Sien">
+  </div>
+  <p class="hint">Op je Mac (zelfde Wi-Fi): <code>ollama pull mistral</code> en <code>OLLAMA_HOST=0.0.0.0 OLLAMA_ORIGINS=* ollama serve</code>.
+  Let op: dit zet een onbeveiligde API open op je Wi-Fi — alleen op een vertrouwd thuisnetwerk. Standaard luistert Ollama alleen op 127.0.0.1.
+  Werkt file:// niet? Serveer de map op je Mac: <code>python3 -m http.server 8000</code> en open op de iPad <code>http://&lt;mac-ip&gt;:8000/jordaan-quartet-chat/kwartet-canvas.html</code>.</p>
+</details>
+
 <canvas id="c" width="920" height="560"></canvas>
 <p class="hint">Eigen chat laden: <code>python3 quartet_chat.py --topic "..." --export chat.json</code> (met Ollama), laad daarna <code>chat.json</code> via de knop hierboven.</p>
 <script>
 const KLEUREN = { Jaap: '#0969da', Truus: '#bf4b8a', Piet: '#9a6700', Sien: '#1a7f37', Gebruiker: '#57606a' };
+const PERSONA_ORDER = ['Jaap', 'Truus', 'Piet', 'Sien'];
+const SYSTEM_PROMPTS = {
+  Jaap: 'Je bent Jaap, de nuchteraar van het Kwartet. Je reageert kort, zakelijk en met feiten. Je corrigeert onzin zakelijk maar vriendelijk. Antwoord in het Nederlands, maximaal 3 zinnen.',
+  Truus: 'Je bent Truus, de verteller van het Kwartet. Je vertelt warme anekdotes in Amsterdamse stijl, met een knipoog, en reageert op wat de anderen zeiden. Antwoord in het Nederlands, maximaal 4 zinnen.',
+  Piet: 'Je bent Piet, de technicus van het Kwartet. Je legt uit hoe dingen technisch werken (SLM\'s, modellen, prompts) en reageert op de technische kant van het gesprek. Antwoord in het Nederlands, maximaal 4 zinnen.',
+  Sien: 'Je bent Sien, de samenvatter van het Kwartet. Je reageert emotioneel, vat samen wat de anderen zeiden en eindigt met een korte conclusie. Antwoord in het Nederlands, maximaal 3 zinnen.'
+};
 
 const DEMO = { messages: [
   { speaker: 'Gebruiker', content: "Wat vinden jullie van SLM's?" },
@@ -216,6 +250,72 @@ document.getElementById('file').onchange = (e) => {
   };
   reader.readAsText(f);
 };
+
+function ollamaMessagesFor(speaker) {
+  const msgs = [{ role: 'system', content: SYSTEM_PROMPTS[speaker] }];
+  for (const m of transcript.messages) {
+    if (m.speaker === 'Gebruiker') {
+      msgs.push({ role: 'user', content: '[Gebruiker] ' + m.content });
+    } else {
+      msgs.push({ role: 'assistant', content: '[' + m.speaker + '] ' + m.content });
+    }
+  }
+  msgs.push({ role: 'user', content: 'Nu ben jij aan de beurt, ' + speaker + '. Reageer op het bovenstaande.' });
+  return msgs;
+}
+
+async function liveChat() {
+  const base = document.getElementById('ollamaUrl').value.replace(/\/+$/, '');
+  const topic = document.getElementById('topicLive').value.trim();
+  const rounds = parseInt(document.getElementById('roundsLive').value || '2', 10);
+  const models = {};
+  document.querySelectorAll('.modelInput').forEach(el => { models[el.dataset.name] = el.value.trim() || 'mistral'; });
+  const status = document.getElementById('liveStatus');
+  const btn = document.getElementById('liveBtn');
+  if (!topic) { alert('Vul eerst een onderwerp in.'); return; }
+  btn.disabled = true;
+  transcript = { messages: [{ speaker: 'Gebruiker', content: topic }] };
+  shown = 0;
+  playing = false;
+  updatePlay();
+  stopTimer();
+  layout();
+  teken();
+  updateStatus();
+  try {
+    for (let r = 0; r < rounds; r++) {
+      for (const name of PERSONA_ORDER) {
+        status.textContent = name + ' (' + models[name] + ') denkt na...';
+        const resp = await fetch(base + '/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: models[name],
+            messages: ollamaMessagesFor(name),
+            stream: false,
+            options: { temperature: 0.7 }
+          })
+        });
+        if (!resp.ok) throw new Error(name + ': HTTP ' + resp.status + ' — draait Ollama op ' + base + '?');
+        const data = await resp.json();
+        const reply = ((data.message && data.message.content) || '').trim();
+        transcript.messages.push({ speaker: name, content: reply });
+        shown++;
+        layout();
+        teken();
+        updateStatus();
+        await new Promise(res => setTimeout(res, 250));
+      }
+    }
+    status.textContent = 'Klaar — ' + transcript.messages.length + ' berichten. Sla op via de Python-CLI (--export) voor hergebruik.';
+  } catch (err) {
+    status.textContent = 'Fout: ' + err.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+document.getElementById('liveBtn').onclick = liveChat;
 
 layout();
 updateStatus();

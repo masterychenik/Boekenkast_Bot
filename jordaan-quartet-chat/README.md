@@ -46,6 +46,20 @@ python3 quartet_chat.py --topic "Wat vinden jullie van AI?" --export chat.json
 
 `kwartet-canvas.html` tekent het gesprek geanimeerd op een HTML5 `<canvas>`: avatar + spraakballon per bericht, met play/pauze, snelheid en de optie om een eigen `--export chat.json` te laden. Werkt met een ingebouwde demo-chat, ook zonder Ollama.
 
+## Op een iPad (of telefoon) draaien
+
+**Visualisatie — werkt offline, geen server nodig:**
+1. Zet `kwartet-canvas.html` op je iPad (AirDrop, iCloud Drive/Files-app, of mail het naar jezelf)
+2. Open het in Safari — de demo-chat speelt automatisch af; via "Eigen chat laden" laad je een `--export chat.json` in
+
+**Live chat met echte SLM's vanaf de iPad (via Ollama op je Mac,zelfde Wi-Fi):**
+1. Op de Mac: `ollama pull mistral` en start Ollama voor het netwerk:
+   `OLLAMA_HOST=0.0.0.0 OLLAMA_ORIGINS=* ollama serve`
+   Let op: dit zet een onbeveiligde API open op je Wi-Fi — alleen op een vertrouwd thuisnetwerk. Zonder `OLLAMA_HOST` luistert Ollama standaard alleen op 127.0.0.1.
+2. Noteer het IP van de Mac (Systeeminstellingen → Netwerk)
+3. Open `kwartet-canvas.html` op de iPad, klap "Live modus" open, vul `http://<mac-ip>:11434` in, kies per personage een model en een onderwerp → ▶ Live starten
+4. Werkt `file://` niet? Serveer de map op de Mac: `python3 -m http.server 8000` en open op de iPad `http://<mac-ip>:8000/jordaan-quartet-chat/kwartet-canvas.html`
+
 In de uitvoer zie je per bericht welk model het heeft gegenereerd: `[Piet | llama3.2] ...`.
 
 ## Hoe het werkt
