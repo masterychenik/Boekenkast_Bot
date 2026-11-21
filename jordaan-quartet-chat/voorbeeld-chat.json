@@ -1,0 +1,13 @@
+{
+  "messages": [
+    { "speaker": "Gebruiker", "content": "Kunnen jullie elk een eigen SLM draaien?" },
+    { "speaker": "Jaap", "content": "Ja. Een SLM draait lokaal op je eigen apparaat; dat is juist het punt." },
+    { "speaker": "Truus", "content": "Wij zingen al jaren met vier stemmen, dus vier modellen kan ook hoor!" },
+    { "speaker": "Piet", "content": "Technisch: elk personage krijgt via --models zijn eigen model en eigen system prompt mee." },
+    { "speaker": "Sien", "content": "Mooi meegenomen: alles blijft dan privé op je eigen laptop." },
+    { "speaker": "Gebruiker", "content": "En wat kost dat?" },
+    { "speaker": "Jaap", "content": "Lokaal draaien kost geen API-kosten, alleen wat stroom." },
+    { "speaker": "Piet", "content": "Reken op een paar GB per model; een 7B-model draait prima op de meeste laptops via Ollama." },
+    { "speaker": "Sien", "content": "Kortom: vier SLM's, één harmonie — en gratis per token." }
+  ]
+}

@@ -44,7 +44,7 @@ python3 quartet_chat.py --topic "Wat vinden jullie van AI?" --export chat.json
 
 ## Canvas-visualisatie
 
-`kwartet-canvas.html` tekent het gesprek geanimeerd op een HTML5 `<canvas>`: avatar + spraakballon per bericht, met play/pauze, snelheid en de optie om een eigen `--export chat.json` te laden. Werkt met een ingebouwde demo-chat, ook zonder Ollama.
+`kwartet-canvas.html` tekent het gesprek geanimeerd op een HTML5 `<canvas>`: avatar + spraakballon per bericht, met play/pauze, snelheid en de optie om een eigen `--export chat.json` te laden. Werkt met een ingebouwde demo-chat, ook zonder Ollama. `voorbeeld-chat.json` is een kant-en-klaar voorbeeldbestand om de laad-functie mee te testen (zelfde formaat als `--export`).
 
 ## Op een iPad (of telefoon) draaien
 
