@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Tests voor Boekenkast_Bot.
+"""Tests voor BibBob (Boekenkast_Bot).
 
 Bootst de solve-logica van index.html na in Python:
 - FAQ eerst: best scorende FAQ-item -> direct antwoord (FAQ-kaart).
-- Anders kasten: beste item per score -> antwoord uit die kast.
-- Moeilijke woorden -> consult-scene (alle kasten, dan antwoord).
-- Geen match -> fallback.
+- Vervolgvraag binnen het specialisme van de actieve kast -> die kast blijft.
+- Anders: consult van alle vier de kasten -> kast met beste match wint en blijft.
+- Geen match -> open kast houdt zijn vragen aan, anders fallback.
 
 Draaien: python3 test_bot.py   (exitcode 0 = geslaagd)
 """
@@ -30,9 +30,24 @@ def raak(woordlijst, k: str) -> bool:
 def laad():
     return json.loads((HIER / "content.json").read_text(encoding="utf-8"))
 
-def is_moeilijk(vraag: str, data) -> bool:
-    v = norm(vraag)
-    return any(m and m in v for m in data.get("moeilijk", "").split("|"))
+def kast_score(sleutel: str, vraag: str, data):
+    """Beste match van één kast op de vraag: (score, item) of None."""
+    w = words(vraag)
+    if not w:
+        return None
+    beste = None
+    for item in data["kasten"][sleutel]["items"]:
+        score = sum(1 for k in item["k"] if raak(w, k))
+        if score > 0 and (beste is None or score > beste[0]):
+            beste = (score, item)
+    return beste
+
+# De kast die het laatst een antwoord gaf; vervolgvragen blijven daar.
+laatste_kast = None
+
+def reset():
+    global laatste_kast
+    laatste_kast = None
 
 def faq_oplossing(vraag: str, data):
     """Best scorende FAQ-item als (score, item), of None."""
@@ -62,16 +77,27 @@ def kast_oplossing(vraag: str, data):
     return None
 
 def solve(vraag: str, data):
+    global laatste_kast
     faq = faq_oplossing(vraag, data)
     kast_res = kast_oplossing(vraag, data)
-    # FAQ eerst, maar alleen bij sterke match (score >= 2)
-    # of als geen enkele kast iets vindt.
+    # 1. FAQ eerst, maar alleen bij sterke match (score >= 2)
+    #    of als geen enkele kast iets vindt.
     if faq and (faq[0] >= 2 or kast_res is None):
+        laatste_kast = None
         return {"bron": "faq", "a": faq[1]["a"]}
-    if is_moeilijk(vraag, data):
-        return {"bron": "consult", "a": None}
+    # 2. Vervolgvraag binnen het specialisme van de actieve kast:
+    #    die kast blijft en antwoordt uit eigen boeken.
+    if laatste_kast:
+        eigen = kast_score(laatste_kast, vraag, data)
+        if eigen:
+            return {"bron": "vervolg", "kast": laatste_kast, "a": eigen[1]["a"]}
+    # 3. Geen FAQ: consult van alle vier de kasten; beste kast wint en blijft.
     if kast_res:
-        return {"bron": "kast", "kast": kast_res[0], "a": kast_res[1]["a"]}
+        laatste_kast = kast_res[0]
+        return {"bron": "consult", "kast": kast_res[0], "a": kast_res[1]["a"]}
+    # 4. Nergens een match.
+    if laatste_kast:
+        return {"bron": "vervolg-geen", "kast": laatste_kast, "a": None}
     return {"bron": "fallback", "a": None}
 
 def main() -> int:
@@ -80,20 +106,19 @@ def main() -> int:
 
     # 1. Alle FAQ-items worden door de FAQ zelf beantwoord.
     for item in data["faq"]:
+        reset()
         r = solve(item["v"], data)
         if r["bron"] != "faq" or r["a"] != item["a"]:
             fouten.append(f"FAQ '{item['v']}' -> {r}")
 
-    # 2. Alle kast-vragen komen uit de eigen kast;
-    #    moeilijke items zijn bewust consult (alle kasten denken mee).
+    # 2. Alle kast-vragen landen na het consult bij de eigen kast.
     for sleutel, kast in data["kasten"].items():
         for item in kast["items"]:
-            if is_moeilijk(item["v"], data):
-                continue
+            reset()
             r = solve(item["v"], data)
             if r["bron"] == "faq":
                 fouten.append(f"Kast-vraag '{item['v']}' ging naar de FAQ: {r['a'][:40]}")
-            elif r["bron"] != "kast" or r.get("kast") != sleutel:
+            elif r["bron"] != "consult" or r.get("kast") != sleutel:
                 fouten.append(f"Kast '{sleutel}' vraag '{item['v']}' -> {r}")
 
     # 3. Trefwoorden matchen in de eigen voorbeeldvraag (woord of woordbegin).
@@ -103,14 +128,25 @@ def main() -> int:
             if not any(raak(w, k) for k in item["k"]):
                 fouten.append(f"Trefwoorden matchen niet in eigen vraag: {item['v']}")
 
-    # 4. Moeilijk woord -> consult, mits de FAQ niet al dekt.
-    if not is_moeilijk("waarom is dit zo?", data):
-        fouten.append("Moeilijk-woord 'waarom' niet herkend")
-    r = solve("Wat is het verschil tussen certificeren en diplomeren?", data)
-    if r["bron"] != "consult":
-        fouten.append(f"Verschil-vraag -> {r['bron']} (verwacht consult)")
+    # 4. Vervolgvraag binnen het specialisme: de actieve kast blijft.
+    reset()
+    r = solve("Hoe werkt certificeren?", data)
+    if r["bron"] != "consult" or r.get("kast") != "certificeren":
+        fouten.append(f"Eerste certificeren-vraag -> {r}")
+    r = solve("Wie geeft een certificaat af?", data)
+    if r["bron"] != "vervolg" or r.get("kast") != "certificeren":
+        fouten.append(f"Vervolgvraag certificeren -> {r} (verwacht vervolg bij certificeren)")
+    # Vraag over een ander domein -> nieuwe consult, kast wisselt.
+    r = solve("Wanneer krijgt een student een diploma?", data)
+    if r["bron"] != "consult" or r.get("kast") != "diplomeren":
+        fouten.append(f"Wissel naar diplomeren -> {r} (verwacht consult bij diplomeren)")
+    # Vraag zonder match blijft in de actieve kast.
+    r = solve("xyzzy flonk blarp", data)
+    if r["bron"] != "vervolg-geen" or r.get("kast") != "diplomeren":
+        fouten.append(f"Onzin als vervolgvraag -> {r} (verwacht vervolg-geen bij diplomeren)")
 
-    # 5. Onzin -> fallback.
+    # 5. Onzin zonder actieve kast -> fallback.
+    reset()
     r = solve("xyzzy flonk blarp", data)
     if r["bron"] != "fallback":
         fouten.append(f"Onzin-vraag -> {r['bron']} (verwacht fallback)")
@@ -129,9 +165,9 @@ def main() -> int:
                 fouten.append(f"index.html mist toneel-element voor kast '{sleutel}'")
         if "getElementById(best.kast)" in html or "kastAan(best.kast" in html:
             fouten.append("index.html gebruikt best.kast direct als element-id; gebruik kastId()")
-        for kenmerk in ["laatsteKast", "kastKnoppen("]:
+        for kenmerk in ["laatsteKast", "kastKnoppen(", "kastScore(", "overleggen"]:
             if kenmerk not in html:
-                fouten.append(f"index.html mist vervolgvraag-functionaliteit: {kenmerk}")
+                fouten.append(f"index.html mist council/vervolgvraag-functionaliteit: {kenmerk}")
         content = (HIER / "content.json").read_text(encoding="utf-8").strip()
         if content not in html:
             fouten.append("index.html bevat niet (meer) de actuele content.json")

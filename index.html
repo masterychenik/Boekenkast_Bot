@@ -5,7 +5,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Boekenkast-Bot</title>
+<title>BibBob</title>
 <style>
   :root {
     --toneel: #fbf9f4;
@@ -143,8 +143,8 @@
 </head>
 <body>
 <header>
-  <h1>Boekenkast-Bot</h1>
-  <p>Ik kijk eerst in de FAQ. Helpt dat niet, dan pakken mijn kasten een boek erbij.</p>
+  <h1>BibBob</h1>
+  <p>Eerst de FAQ. Past geen FAQ-item? Dan overleggen mijn vier kasten welk specialisme de vraag raakt; die kast blijft en leest uit eigen boeken.</p>
 </header>
 
 <div id="toneel">
@@ -167,7 +167,7 @@
 <script>
 // ===INHOUD-START===
 const INHOUD = {
-  "uitleg": "Boekenkast_Bot content. Eerst wordt de FAQ gecheckt; alleen als geen FAQ-item past, komen de kasten met boeken per domein in beeld.",
+  "uitleg": "BibBob content. Eerst wordt de FAQ gecheckt; past geen FAQ-item, dan overleggen de vier kasten (elk met eigen specialisme-kennis) welk domein de vraag raakt. Die kast blijft en beantwoordt ook vervolgvragen.",
   "namen": {
     "kast_studentgegevens": "Kast Geesje",
     "kast_resultaatverwerking": "Kast Vera",
@@ -179,9 +179,19 @@ const INHOUD = {
       "v": "Wie is de bot?",
       "k": [
         "wie",
-        "jij"
+        "jij",
+        "bibbob"
       ],
-      "a": "Ik ben de Boekenkast-Bot. Stel een vraag; ik kijk eerst in de FAQ, anders pakken mijn kasten er een boek bij."
+      "a": "Ik ben BibBob, de boekenkast-bot. Stel een vraag; ik kijk eerst in de FAQ. Past er geen, dan overleggen mijn vier kasten welk specialisme het is."
+    },
+    {
+      "v": "Hoe heet je?",
+      "k": [
+        "heet",
+        "naam",
+        "bibbob"
+      ],
+      "a": "Ik heet BibBob. Elke kast leest daarbij alleen uit eigen boeken: zijn eigen specialisme-kennis."
     },
     {
       "v": "Hoe werkt de bot?",
@@ -190,7 +200,7 @@ const INHOUD = {
         "faq",
         "bot"
       ],
-      "a": "Veelgestelde vragen staan in de FAQ. Past er geen, dan zoeken de kasten het antwoord op uit hun boeken per domein."
+      "a": "Eerst de FAQ. Past geen FAQ-item, dan komen de vier kasten samen en bepalen ze bij welk specialisme de vraag hoort. Die kast blijft en beantwoordt ook je vervolgvragen, steeds uit eigen boeken."
     },
     {
       "v": "Wat kan ik vragen?",
@@ -212,7 +222,6 @@ const INHOUD = {
       "a": "Graag gedaan! Nog een vraag?"
     }
   ],
-  "moeilijk": "waarom|verschil|vergelijk|beste|advies|moet ik|uitleg",
   "fallback": [
     "Geen FAQ-item en geen boek in mijn kasten hielp verder. Probeer een van de voorbeeldvragen.",
     "Hier vinden mijn kasten niets over. Stel je vraag anders of kies een voorbeeldvraag."
@@ -473,10 +482,6 @@ function norm(t) {
   return t.replace(/\s+/g, " ").trim();
 }
 function words(t) { return norm(t).split(" ").filter(w => w.length >= 3); }
-function isMoeilijk(vraag) {
-  const v = norm(vraag);
-  return INHOUD.moeilijk.split("|").some(m => m && v.includes(m));
-}
 function raak(w, k) { return w.some(x => x === k || x.startsWith(k)); }
 function faqOplossing(vraag) {
   // FAQ-item met de beste score, of null.
@@ -502,6 +507,20 @@ function kastOplossing(vraag) {
       if (score > 0 && (!beste || score > beste.score)) {
         beste = { score, kast: sleutel, item };
       }
+    }
+  }
+  return beste;
+}
+function kastScore(sleutel, vraag) {
+  // beste match van één kast op de vraag: {score, item} of null.
+  // Elke kast scoort alleen op zijn eigen boeken (eigen specialisme-kennis).
+  const w = words(vraag);
+  if (!w.length) return null;
+  let beste = null;
+  for (const item of INHOUD.kasten[sleutel].items) {
+    const score = item.k.reduce((s, k) => s + (raak(w, k) ? 1 : 0), 0);
+    if (score > 0 && (!beste || score > beste.score)) {
+      beste = { score, item };
     }
   }
   return beste;
@@ -570,8 +589,7 @@ function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 function solve(vraag, klaar) {
   const faq = faqOplossing(vraag);
   const best = kastOplossing(vraag);
-  // FAQ eerst, maar alleen bij een sterke match (score >= 2)
-  // of als geen enkele kast iets vindt.
+  // 1. FAQ eerst: sterke FAQ-match (score >= 2), of geen enkele kast die iets vindt.
   if (faq && (faq.score >= 2 || !best)) {
     laatsteKast = null;
     allesWeg();
@@ -580,54 +598,72 @@ function solve(vraag, klaar) {
     typeOut(faq.item.a, klaar);
     return;
   }
-  const moeilijk = isMoeilijk(vraag);
   document.getElementById("faqkaart").classList.remove("aan");
-  if (!best) {
-    if (laatsteKast) {
-      // Vervolgvraag in de open kast die nergens op lijkt:
-      // stel de vragen van die kast voor.
-      const kast = INHOUD.kasten[laatsteKast];
+
+  // 2. Vervolgvraag binnen het specialisme van de kast die bleef staan:
+  //    die kast blijft en antwoordt uit zijn eigen boeken.
+  if (laatsteKast) {
+    const eigen = kastScore(laatsteKast, vraag);
+    if (eigen) {
       allesWeg();
       kastAan(kastId(laatsteKast), false);
-      typeOut("Dat staat niet in het boek van " + kast.kast_naam + ". Wel in dit boek:", () => {
+      const kast = INHOUD.kasten[laatsteKast];
+      typeOut(kast.hallo, () => {
         document.getElementById(kastId(laatsteKast)).classList.add("pakuit");
-        kastKnoppen(laatsteKast, vraag);
-        typeOut("Kies hieronder een vervolgvraag, of stel een nieuwe vraag.", klaar);
+        typeOut(eigen.item.a, () => {
+          kastKnoppen(laatsteKast, eigen.item.v);
+          if (klaar) klaar();
+        });
       });
       return;
     }
-    allesWeg();
-    initVoorbeelden();
-    typeOut(pick(INHOUD.fallback), klaar);
-    return;
   }
-  if (moeilijk) {
-    // consult: alle kasten komen, boek ernaast, dan het antwoord.
+
+  // 3. Geen FAQ-item: de vier kasten overleggen welk specialisme de vraag raakt.
+  //    De kast met de beste match op zijn eigen boeken wint, blijft en antwoordt.
+  if (best) {
     laatsteKast = best.kast;
     allesWeg();
     for (const id of alleKasten) kastAan(id, false);
-    typeOut("De kasten slaan hun boeken naast elkaar open en overleggen...", () => {
-      const kastEl = document.getElementById(kastId(best.kast));
-      kastEl.classList.add("pakuit");
-      typeOut("Na overleg: " + best.item.a, () => {
-        kastKnoppen(best.kast, best.item.v);
-        if (klaar) klaar();
+    const overleg = alleKasten.map(id => {
+      const sleutel = id.replace(/^kast_/, "");
+      const s = kastScore(sleutel, vraag);
+      const naam = INHOUD.kasten[sleutel].kast_naam;
+      return s
+        ? naam + ": " + s.score + (s.score > 1 ? " treffers" : " treffer") + " in eigen boeken (" + INHOUD.kasten[sleutel].naam + ")"
+        : naam + ": niet mijn domein";
+    });
+    typeOut("Geen FAQ-item past. De vier kasten slaan hun eigen boeken open en overleggen...", () => {
+      typeOut(overleg.join("  ·  "), () => {
+        for (const id of alleKasten) {
+          if (id !== kastId(best.kast)) document.getElementById(id).classList.add("dim");
+        }
+        const kast = INHOUD.kasten[best.kast];
+        document.getElementById(kastId(best.kast)).classList.add("pakuit");
+        typeOut("Na overleg: " + kast.kast_naam + " blijft en leest voor uit eigen boek over " + kast.naam + ": " + best.item.a, () => {
+          kastKnoppen(best.kast, best.item.v);
+          if (klaar) klaar();
+        });
       });
     });
     return;
   }
-  // gewone kast-scène: alleen de juiste kast komt met boek.
-  laatsteKast = best.kast;
-  allesWeg();
-  kastAan(kastId(best.kast), false);
-  const kast = INHOUD.kasten[best.kast];
-  typeOut(kast.hallo, () => {
-    document.getElementById(kastId(best.kast)).classList.add("pakuit");
-    typeOut(best.item.a, () => {
-      kastKnoppen(best.kast, best.item.v);
-      if (klaar) klaar();
+
+  // 4. Nergens een match: blijf in de open kast met zijn vragen, of fallback.
+  if (laatsteKast) {
+    const kast = INHOUD.kasten[laatsteKast];
+    allesWeg();
+    kastAan(kastId(laatsteKast), false);
+    typeOut("Dat staat niet in het boek van " + kast.kast_naam + ". Wel in dit boek:", () => {
+      document.getElementById(kastId(laatsteKast)).classList.add("pakuit");
+      kastKnoppen(laatsteKast, vraag);
+      typeOut("Kies hieronder een vervolgvraag, of stel een nieuwe vraag.", klaar);
     });
-  });
+    return;
+  }
+  allesWeg();
+  initVoorbeelden();
+  typeOut(pick(INHOUD.fallback), klaar);
 }
 
 // ---------- Voorbeeldvragen ----------
@@ -675,7 +711,7 @@ document.getElementById("vraag").addEventListener("keydown", e => {
 
 initToneel();
 initVoorbeelden();
-zeg("Hoi! Ik ben de Boekenkast-Bot. Stel een vraag of kies een voorbeeldvraag hieronder.", false);
+zeg("Hoi! Ik ben BibBob. Stel een vraag of kies een voorbeeldvraag hieronder.", false);
 </script>
 </body>
 </html>
