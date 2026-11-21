@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>PR flow — Boekenkast_Bot #1</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #f6f8fa; margin: 24px; }
+  h1 { font-size: 20px; }
+  canvas { background: #fff; border: 1px solid #d0d7de; border-radius: 8px; max-width: 100%; }
+</style>
+</head>
+<body>
+<h1>Hoe werkt een Pull Request? — Boekenkast_Bot PR #1</h1>
+<canvas id="c" width="1040" height="460"></canvas>
+<script>
+const ctx = document.getElementById('c').getContext('2d');
+
+function text(x, y, s, o = {}) {
+  const { size = 13, bold = false, color = '#1f2328', align = 'left' } = o;
+  ctx.font = (bold ? 'bold ' : '') + size + 'px system-ui, sans-serif';
+  ctx.fillStyle = color;
+  ctx.textAlign = align;
+  ctx.fillText(s, x, y);
+}
+
+function line(x1, y1, x2, y2, o = {}) {
+  const { color = '#0969da', w = 3, dash = [] } = o;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = w;
+  ctx.setLineDash(dash);
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function arrow(x1, y1, x2, y2, o = {}) {
+  const { color = '#8250df', w = 3 } = o;
+  line(x1, y1, x2, y2, { color, w, dash: [6, 4] });
+  const a = Math.atan2(y2 - y1, x2 - x1), L = 10;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - L * Math.cos(a - 0.4), y2 - L * Math.sin(a - 0.4));
+  ctx.lineTo(x2 - L * Math.cos(a + 0.4), y2 - L * Math.sin(a + 0.4));
+  ctx.closePath();
+  ctx.fill();
+}
+
+function dot(x, y, o = {}) {
+  const { color = '#0969da', r = 7 } = o;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, 2 * Math.PI);
+  ctx.fill();
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+function box(x, y, w, h, o = {}) {
+  const { fill = '#fff8c5', border = '#d4a72c', r = 10 } = o;
+  ctx.fillStyle = fill;
+  ctx.strokeStyle = border;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+}
+
+text(40, 42, 'Pull Request flow — Boekenkast_Bot PR #1', { size: 22, bold: true });
+
+text(60, 118, 'main', { bold: true, color: '#0969da' });
+line(60, 140, 980, 140, { color: '#0969da', w: 3 });
+dot(140, 140);
+text(140, 168, 'e0a7497 — bestaande bot', { align: 'center', size: 12 });
+
+line(300, 140, 300, 280, { color: '#1a7f37', w: 3 });
+dot(300, 140, { color: '#1a7f37' });
+line(300, 280, 660, 280, { color: '#1a7f37', w: 3 });
+text(310, 308, 'vibe/jordaan-quartet-slm-78e178', { color: '#1a7f37', bold: true, size: 12 });
+dot(420, 280, { color: '#1a7f37' });
+text(420, 308, 'bf46bdb — Kwartet demo', { align: 'center', size: 12 });
+dot(560, 280, { color: '#1a7f37' });
+text(560, 308, 'dd26854 — CI workflow', { align: 'center', size: 12 });
+
+box(660, 230, 320, 110);
+text(820, 262, 'PR #1 (draft)', { align: 'center', bold: true, size: 15 });
+text(820, 284, 'Jordaan Kwartet multi-agent', { align: 'center', size: 12 });
+text(820, 302, 'SLM-chat demo + CI', { align: 'center', size: 12 });
+text(820, 326, 'branch → PR → review → merge', { align: 'center', size: 11, color: '#57606a' });
+
+dot(700, 180, { color: '#1a7f37', r: 14 });
+text(700, 185, '✓', { align: 'center', bold: true, color: '#fff', size: 16 });
+text(724, 185, 'bot-checks: pass (12s)', { color: '#1a7f37', bold: true, size: 13 });
+
+arrow(880, 230, 920, 148, { color: '#8250df', w: 3 });
+text(905, 200, 'Merge', { color: '#8250df', bold: true });
+dot(920, 140, { color: '#8250df' });
+text(920, 168, 'main + demo', { align: 'center', size: 12, color: '#8250df' });
+</script>
+</body>
+</html>

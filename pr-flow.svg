@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="460" font-family="system-ui, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8250df"/>
+    </marker>
+  </defs>
+  <rect width="1040" height="460" fill="#ffffff"/>
+  <text x="40" y="42" font-size="22" font-weight="bold">Pull Request flow — Boekenkast_Bot PR #1</text>
+
+  <text x="60" y="118" font-weight="bold" fill="#0969da">main</text>
+  <line x1="60" y1="140" x2="980" y2="140" stroke="#0969da" stroke-width="3"/>
+  <circle cx="140" cy="140" r="7" fill="#0969da" stroke="#fff" stroke-width="2"/>
+  <text x="140" y="168" font-size="12" text-anchor="middle">e0a7497 — bestaande bot</text>
+
+  <line x1="300" y1="140" x2="300" y2="280" stroke="#1a7f37" stroke-width="3"/>
+  <circle cx="300" cy="140" r="7" fill="#1a7f37" stroke="#fff" stroke-width="2"/>
+  <line x1="300" y1="280" x2="660" y2="280" stroke="#1a7f37" stroke-width="3"/>
+  <text x="310" y="308" font-size="12" font-weight="bold" fill="#1a7f37">vibe/jordaan-quartet-slm-78e178</text>
+  <circle cx="420" cy="280" r="7" fill="#1a7f37" stroke="#fff" stroke-width="2"/>
+  <text x="420" y="308" font-size="12" text-anchor="middle">bf46bdb — Kwartet demo</text>
+  <circle cx="560" cy="280" r="7" fill="#1a7f37" stroke="#fff" stroke-width="2"/>
+  <text x="560" y="308" font-size="12" text-anchor="middle">dd26854 — CI workflow</text>
+
+  <rect x="660" y="230" width="320" height="110" rx="10" fill="#fff8c5" stroke="#d4a72c" stroke-width="2"/>
+  <text x="820" y="262" font-size="15" font-weight="bold" text-anchor="middle">PR #1 (draft)</text>
+  <text x="820" y="284" font-size="12" text-anchor="middle">Jordaan Kwartet multi-agent</text>
+  <text x="820" y="302" font-size="12" text-anchor="middle">SLM-chat demo + CI</text>
+  <text x="820" y="326" font-size="11" fill="#57606a" text-anchor="middle">branch → PR → review → merge</text>
+
+  <circle cx="700" cy="180" r="14" fill="#1a7f37"/>
+  <text x="700" y="186" font-size="16" font-weight="bold" fill="#fff" text-anchor="middle">✓</text>
+  <text x="724" y="185" font-size="13" font-weight="bold" fill="#1a7f37">bot-checks: pass (12s)</text>
+
+  <line x1="880" y1="230" x2="920" y2="148" stroke="#8250df" stroke-width="3" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+  <text x="905" y="200" font-size="13" font-weight="bold" fill="#8250df">Merge</text>
+  <circle cx="920" cy="140" r="7" fill="#8250df" stroke="#fff" stroke-width="2"/>
+  <text x="920" y="168" font-size="12" fill="#8250df" text-anchor="middle">main + demo</text>
+</svg>
