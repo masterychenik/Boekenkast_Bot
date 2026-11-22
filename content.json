@@ -1,5 +1,5 @@
 {
-  "uitleg": "Boekenkast_Bot content. Eerst wordt de FAQ gecheckt; alleen als geen FAQ-item past, komen de kasten met boeken per domein in beeld.",
+  "uitleg": "BibBob content. Eerst wordt de FAQ gecheckt; past geen FAQ-item, dan overleggen de vier kasten (elk met eigen specialisme-kennis) welk domein de vraag raakt. Die kast blijft en beantwoordt ook vervolgvragen.",
   "namen": {
     "kast_studentgegevens": "Kast Geesje",
     "kast_resultaatverwerking": "Kast Vera",
@@ -11,9 +11,19 @@
       "v": "Wie is de bot?",
       "k": [
         "wie",
-        "jij"
+        "jij",
+        "bibbob"
       ],
-      "a": "Ik ben de Boekenkast-Bot. Stel een vraag; ik kijk eerst in de FAQ, anders pakken mijn kasten er een boek bij."
+      "a": "Ik ben BibBob, de boekenkast-bot. Stel een vraag; ik kijk eerst in de FAQ. Past er geen, dan overleggen mijn vier kasten welk specialisme het is."
+    },
+    {
+      "v": "Hoe heet je?",
+      "k": [
+        "heet",
+        "naam",
+        "bibbob"
+      ],
+      "a": "Ik heet BibBob. Elke kast leest daarbij alleen uit eigen boeken: zijn eigen specialisme-kennis."
     },
     {
       "v": "Hoe werkt de bot?",
@@ -22,7 +32,7 @@
         "faq",
         "bot"
       ],
-      "a": "Veelgestelde vragen staan in de FAQ. Past er geen, dan zoeken de kasten het antwoord op uit hun boeken per domein."
+      "a": "Eerst de FAQ. Past geen FAQ-item, dan komen de vier kasten samen en bepalen ze bij welk specialisme de vraag hoort. Die kast blijft en beantwoordt ook je vervolgvragen, steeds uit eigen boeken."
     },
     {
       "v": "Wat kan ik vragen?",
@@ -44,7 +54,6 @@
       "a": "Graag gedaan! Nog een vraag?"
     }
   ],
-  "moeilijk": "waarom|verschil|vergelijk|beste|advies|moet ik|uitleg",
   "fallback": [
     "Geen FAQ-item en geen boek in mijn kasten hielp verder. Probeer een van de voorbeeldvragen.",
     "Hier vinden mijn kasten niets over. Stel je vraag anders of kies een voorbeeldvraag."
